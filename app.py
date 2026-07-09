@@ -3,15 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 from collections import defaultdict
 import csv
 import io
+import os
 
 
 app = Flask(__name__)
 
+# Use Render's writable storage
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///expenses.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
-
 
 
 class Budget(db.Model):
@@ -19,13 +20,11 @@ class Budget(db.Model):
     amount = db.Column(db.Float, nullable=False)
 
 
-
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(100), nullable=False)
     date = db.Column(db.String(20), nullable=False)
-
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -45,24 +44,17 @@ def home():
         return redirect("/")
 
 
-
     selected_month = request.args.get("month")
 
-
     if selected_month:
-
         expenses = Expense.query.filter(
             Expense.date.like(f"{selected_month}%")
         ).all()
-
     else:
-
         expenses = Expense.query.all()
 
 
-
     total = sum(e.amount for e in expenses)
-
 
 
     category_totals = defaultdict(float)
@@ -73,17 +65,13 @@ def home():
 
     categories = dict(category_totals)
 
-
-
     expense_count = len(expenses)
-
 
 
     if categories:
         biggest_category = max(categories, key=categories.get)
     else:
         biggest_category = "None"
-
 
 
     budget = Budget.query.first()
@@ -95,7 +83,6 @@ def home():
 
 
     remaining = budget_amount - total
-
 
 
     return render_template(
@@ -110,8 +97,6 @@ def home():
     )
 
 
-
-
 @app.route("/delete/<int:id>")
 def delete(id):
 
@@ -124,13 +109,10 @@ def delete(id):
     return redirect("/")
 
 
-
-
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
 def edit(id):
 
     expense = Expense.query.get(id)
-
 
     if request.method == "POST":
 
@@ -147,8 +129,6 @@ def edit(id):
         "edit.html",
         expense=expense
     )
-
-
 
 
 @app.route("/export")
@@ -180,10 +160,7 @@ def export():
 
     response.headers["Content-Disposition"] = "attachment; filename=expenses.csv"
 
-
     return response
-
-
 
 
 @app.route("/budget", methods=["POST"])
@@ -191,31 +168,26 @@ def budget():
 
     amount = float(request.form["budget"])
 
-
     old_budget = Budget.query.first()
 
 
     if old_budget:
-
         old_budget.amount = amount
 
     else:
-
         new_budget = Budget(amount=amount)
         db.session.add(new_budget)
 
 
     db.session.commit()
 
-
     return redirect("/")
 
 
+# Create database tables automatically
+with app.app_context():
+    db.create_all()
 
 
 if __name__ == "__main__":
-
-    with app.app_context():
-        db.create_all()
-
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
