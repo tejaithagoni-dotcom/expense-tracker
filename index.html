@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="hero">
+        <h1>💰 Expense Tracker</h1>
+
+        <p>
+          Track your spending, analyze habits, and manage your money smarter.
+        </p>
+      </div>
+
+      <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
+
+      <h2>Dashboard</h2>
+
+      <div class="dashboard">
+        <div class="card">
+          <h3>Total Spent</h3>
+          <h2>₹{{ total }}</h2>
+        </div>
+
+        <div class="card">
+          <h3>Total Expenses</h3>
+          <h2>{{ expense_count }}</h2>
+        </div>
+
+        <div class="card">
+          <h3>Top Category</h3>
+          <h2>{{ biggest_category }}</h2>
+        </div>
+      </div>
+
+      <a href="/export">
+        <button>📄 Export CSV</button>
+      </a>
+
+      <h2>Add Expense</h2>
+
+      <form method="POST">
+        <input type="number" name="amount" placeholder="Amount" required />
+
+        <input type="text" name="category" placeholder="Category" required />
+
+        <input type="date" name="date" required />
+
+        <button>➕ Add Expense</button>
+      </form>
+
+      <h2>Filter Expenses</h2>
+
+      <form method="GET">
+        <input type="month" name="month" />
+
+        <button>🔍 View</button>
+      </form>
+
+      <h2>Recent Expenses</h2>
+
+      {% for e in expenses %}
+
+      <div class="expense-card">
+        <b>₹{{ e.amount }}</b>
+
+        <br />
+
+        📌 {{ e.category }}
+
+        <br />
+
+        📅 {{ e.date }}
+
+        <br /><br />
+
+        <a href="/edit/{{ e.id }}">
+          <button>✏ Edit</button>
+        </a>
+
+        <a href="/delete/{{ e.id }}">
+          <button class="delete-btn">🗑 Delete</button>
+        </a>
+      </div>
+
+      {% endfor %}
+
+      <h2>📊 Spending Analytics</h2>
+
+      <canvas id="expenseChart"></canvas>
+
+      <canvas id="barChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+
+
+      const labels = {{ categories.keys() | list | tojson }};
+
+      const values = {{ categories.values() | list | tojson }};
+
+
+
+      new Chart(document.getElementById("expenseChart"), {
+
+          type: "pie",
+
+          data: {
+
+              labels: labels,
+
+              datasets: [{
+                  data: values
+              }]
+
+          }
+
+      });
+
+
+
+
+      new Chart(document.getElementById("barChart"), {
+
+          type: "bar",
+
+          data: {
+
+              labels: labels,
+
+              datasets: [{
+
+                  label: "Amount Spent",
+
+                  data: values
+
+              }]
+
+          }
+
+      });
+
+
+
+
+      function toggleDarkMode(){
+
+          document.body.classList.toggle("dark");
+
+      }
+    </script>
+  </body>
+</html>
